@@ -1,4 +1,4 @@
-from gurobipy import Model, GRB, GurobiError, quicksum
+from gurobipy import Model, GRB, GurobiError, quicksum, max_
 import numpy as np
 from gantt_plot import *
 StatusDict = {getattr(GRB.Status, s): s for s in dir(GRB.Status) if s.isupper()}
@@ -13,7 +13,7 @@ class PMSP_Gurobi(object):
   def solve(self, job_ids, request_times, process_intervals, machine_properties):
     solved = False
     pmsp_model, assign, order, startTime = self._create_model(job_ids, request_times, process_intervals, machine_properties)
-    self._set_model_parms(pmsp_model)
+    # self._set_model_parms(pmsp_model)
     # solve the model
     try:
       pmsp_model.optimize()
@@ -32,8 +32,11 @@ class PMSP_Gurobi(object):
     return solved
 
   def _set_model_parms(self, m):
+    # permittable gap
     m.setParam('MIPGap',0.2)
+    # time limit
     m.setParam('TimeLimit',10)
+    # percentage of time on heuristics
     m.setParam('Heuristics',0.5)
 
   def _formulate_schedules(self, job_ids, request_times, process_intervals,
@@ -83,7 +86,11 @@ class PMSP_Gurobi(object):
     # 3. start time of executing each job
     startTime = m.addVars(jobs, name='startTime')
     ## create objective
-    m.setObjective(quicksum(startTime), GRB.MINIMIZE) # TOTRY
+    # m.setObjective(quicksum(startTime), GRB.MINIMIZE) # TOTRY
+    
+    m._max_complete = m.addVar(1, name='max_complete_time')
+    m.setObjective(m._max_complete, GRB.MINIMIZE) # TOTRY
+    m.addConstr((m._max_complete==max_(startTime)),'minimax')
     ## create constraints
     # 1. job release constraint
     m.addConstrs((startTime[i] >= release_time[i] for i in jobs),'job release constraint')
@@ -101,7 +108,7 @@ class PMSP_Gurobi(object):
 
 
 if __name__ == '__main__':
-  job_num = 5
+  job_num = 25
   machine_num = 5
   job_ids = np.arange(0, job_num, 1, dtype=np.int32)
   # machine_ids = np.arange(0, machine_num, 1, dtype=np.int32)

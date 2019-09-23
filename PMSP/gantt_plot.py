@@ -26,28 +26,28 @@ def gantt_chart_plot(JOBS, SCHEDULE, Machine_available, Title):
     plt.grid()
     xlim = plt.xlim()
 
-    # order machine for plotting nicely
-    MACHINES = sorted(set([SCHEDULE[j]['machine'] for j in JOBS.keys()]))
+    # # order machine for plotting nicely
+    # MACHINES = sorted(set([SCHEDULE[j]['machine'] for j in JOBS.keys()]))
     
-    plt.figure(figsize=(12, 0.7*len(MACHINES)))
-    for j in sorted(JOBS.keys()):
-        idx = MACHINES.index(SCHEDULE[j]['machine'])
-        x = 0
-        y = Machine_available[idx]
-        plt.fill_between([x,y],[idx-bw,idx-bw],[idx+bw,idx+bw], color='green', alpha=0.5)
-        x = SCHEDULE[j]['start']
-        y = SCHEDULE[j]['finish']
-        plt.fill_between([x,y],[idx-bw,idx-bw],[idx+bw,idx+bw], color='red', alpha=0.5)
-        plt.plot([x,y,y,x,x], [idx-bw,idx-bw,idx+bw,idx+bw,idx-bw],color='k')
-        plt.text((SCHEDULE[j]['start'] + SCHEDULE[j]['finish'])/2.0,idx,
-            'Job ' + str(j), color='grey', weight='bold',
-            horizontalalignment='center', verticalalignment='center')
-    plt.xlim(xlim)
-    plt.ylim(-0.5, len(MACHINES)-0.5)
-    plt.title('Machine Schedule '+ Title)
-    plt.yticks(range(len(MACHINES)), MACHINES)
-    plt.ylabel('Machines')
-    plt.grid()
+    # plt.figure(figsize=(12, 0.7*len(MACHINES)))
+    # for j in sorted(JOBS.keys()):
+    #     idx = MACHINES.index(SCHEDULE[j]['machine'])
+    #     x = 0
+    #     y = Machine_available[idx]
+    #     plt.fill_between([x,y],[idx-bw,idx-bw],[idx+bw,idx+bw], color='green', alpha=0.5)
+    #     x = SCHEDULE[j]['start']
+    #     y = SCHEDULE[j]['finish']
+    #     plt.fill_between([x,y],[idx-bw,idx-bw],[idx+bw,idx+bw], color='red', alpha=0.5)
+    #     plt.plot([x,y,y,x,x], [idx-bw,idx-bw,idx+bw,idx+bw,idx-bw],color='k')
+    #     plt.text((SCHEDULE[j]['start'] + SCHEDULE[j]['finish'])/2.0,idx,
+    #         'Job ' + str(j), color='grey', weight='bold',
+    #         horizontalalignment='center', verticalalignment='center')
+    # plt.xlim(xlim)
+    # plt.ylim(-0.5, len(MACHINES)-0.5)
+    # plt.title('Machine Schedule '+ Title)
+    # plt.yticks(range(len(MACHINES)), MACHINES)
+    # plt.ylabel('Machines')
+    # plt.grid()
 
 def formulate_jobs_dict(job_ids, release_times, process_intervals):
   job_dict = {}

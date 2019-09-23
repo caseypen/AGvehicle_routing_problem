@@ -21,13 +21,22 @@ We can use a $G=(V, A)$ graph to model the vertices which are needed to go over 
 ##### 3. Mathematical model
 
 -  Minimize the sum of tour distances
+  
   - $min\sum\limits_{1\leq i\neq j\leq N}x_{ij}d_{ij}$ 
-- All the tour starting from $v_1$:
-  - $\sum\limits_{i=1, j\neq i}^{N}x_{ij}=1, j\in \{1,2,\ldots, N\}$
-- All the tour end with $v_1$:
-  - $\sum\limits_{j=1,j\neq i}^n x_{ij}=1, i\in\{1,2,\ldots, N\}$
-- No sub-tours (MTZ formulation):
+  
+- Network flow of each node:
+  
+  - $\sum\limits_{i, j\neq i}^{N}x_{ij}=1, j\in \{1,2,\ldots, N\}$
+  
+  - $\sum\limits_{j,j\neq i}^n x_{ij}=1, i\in\{1,2,\ldots, N\}$
+  
+- No sub-tours (MTZ formulation) -Method I:
   - $u_i-u_j+nx_{ij}\leq n-1,\ \ \  2\leq i,j\leq n, i\neq j$
   - If there is sub-tour (with M nodes) except the one starting from and end with $v_1$, the M non-equalities are added together and we can get $n\leq n-1$, which is a contradiction, so the MTZ formulation guarantee that the sub-tour does not exist.
   - $u_1=1, u_i\in\mathcal{R}, 2\leq u_i\leq n$
     - Shrink the possible searching base;
+  
+- No sub-tours (DFJ formulation) -Method II:
+
+  - $\sum_\limits{i\in S, j\in S}x_{ij} \leq |S|-1$
+  - Implemented with lazy constraints in Gurobi;
