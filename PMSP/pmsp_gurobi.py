@@ -2,6 +2,15 @@ from gurobipy import Model, GRB, GurobiError, quicksum, max_
 import numpy as np
 from gantt_plot import *
 StatusDict = {getattr(GRB.Status, s): s for s in dir(GRB.Status) if s.isupper()}
+start_times = [ 8., 21.,  5.,  0., 22., 22., 20., 21., 18.,  0., 22., 16.,  4., 13., 12.,  5., 22., 12.]
+assign_list = [(0, 0), (1, 1), (2, 4), (3, 3), (4, 2), (5, 3), (6, 2), (7, 3), (8, 3), (9, 1), 
+               (10, 0), (11, 3), (12, 2), (13, 2), (14, 4), (15, 0), (16, 4), (17, 1)]
+order_list = [(0, 1), (0, 5),
+              (2, 10), (2, 14), 
+              (3, 5), (3, 6), (3, 8),
+              (9, 17), 
+              (12, 13), 
+              (15, 16)]
 
 class PMSP_Gurobi(object):
   """docstring for PMSP_Gurobi"""
@@ -21,6 +30,7 @@ class PMSP_Gurobi(object):
         solved = True
         self._formulate_schedules(job_ids, request_times, process_intervals,
                                   machine_properties, assign, order, startTime)
+
       else:
         statstr = StatusDict[pmsp_model.status]
         print('Optimization was stopped with status %s' %statstr)
@@ -43,6 +53,8 @@ class PMSP_Gurobi(object):
                            machines, assign, order, startTime):
     # print("variables: ", startTime.keys)
     start_times = np.zeros(len(job_ids))
+    assign_list = []
+    order_list = []
     j_ids = list(job_ids)
     for i, j_id in enumerate(job_ids):
       self.schedules[j_id] = {}
@@ -51,8 +63,17 @@ class PMSP_Gurobi(object):
       for m in range(len(machines)):
         if assign[j_id, m].x == 1:
           self.schedules[j_id]['machine'] = m
+          assign_list.append((j_id, m))
       start_times[i] = startTime[j_id].x
     
+    for i_id in job_ids:
+      for j_id in job_ids:
+        if i_id < j_id:
+          if order[i_id, j_id].x > 0.5:
+            order_list.append((i_id, j_id))
+    print("start_times: ", start_times)
+    print("assign_list: ", assign_list)
+    print("order_list: ", order_list)
     self.order = job_ids[np.argsort(start_times)]
 
     return 
@@ -104,11 +125,28 @@ class PMSP_Gurobi(object):
     # 4. one job is assigned to one and only one machine
     m.addConstrs((quicksum([z[i,k] for k in machines])==1 for i in jobs), 'job non-splitting')
 
+    # set initial solution
+    for (i,k) in job_machinePairs:
+      if (i,k) in assign_list:
+        z[(i,k)].start = 1
+      else:
+        z[(i,k)].start = 0
+
+    for (i,j) in jobPairs:
+      if (i,j) in order_list:
+        y[(i,j)].start = 1
+      else:
+        y[(i,j)].start = 0
+
+    for i in job_ids:
+      startTime[i].start = start_times[i]
+
+
     return m, z, y, startTime    
 
 
 if __name__ == '__main__':
-  job_num = 25
+  job_num = 18
   machine_num = 5
   job_ids = np.arange(0, job_num, 1, dtype=np.int32)
   # machine_ids = np.arange(0, machine_num, 1, dtype=np.int32)

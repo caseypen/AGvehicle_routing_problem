@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 StatusDict = {getattr(GRB.Status, s): s for s in dir(GRB.Status) if s.isupper()}
-
+init_solution = [(1, 6), (2, 14), (3, 10), (4, 5), (5, 9), (6, 12), (7, 15), (8, 16), (9, 18), (10, 4), (11, 19),
+                   (12, 7), (13, 11), (14, 3), (15, 20), (16, 2), (17, 13), (18, 17), (19, 1), (20, 8)]
 class TSP_Gurobi(object):
   """docstring for PMSP_Gurobi"""
   def __init__(self):
@@ -95,7 +96,7 @@ class TSP_Gurobi(object):
       for j in city_ids: 
         if (i!=j) and (solution[i,j] > 0.5):
           selected.append((i,j))
-
+    print("selected", selected)
     self.route = selected
     # print("route: ", selected)
     self.route_order.append(city_ids[0])
@@ -105,7 +106,7 @@ class TSP_Gurobi(object):
         if (prev, c_id) in selected:
           self.route_order.append(c_id)
           prev = c_id
-    # print("route_order ids", self.route_order)
+    print("route_order ids", self.route_order)
 
     return 
 
@@ -148,12 +149,14 @@ class TSP_Gurobi(object):
     # 1. Network flow
     m.addConstrs((quicksum([x[i,j] for j in cities if i!=j])==1 for i in cities), 'Network flow1')
     m.addConstrs((quicksum([x[i,j] for i in cities if i!=j])==1 for j in cities), 'Network flow2')
-
+    for (i,j) in cityArcs:
+      if (i,j) in init_solution:
+        x[i,j].start = 1
     return m, x
 
 
 if __name__ == '__main__':
-  city_num = 50
+  city_num = 20
   np.random.seed(1)
   # map points generated
   map_points = np.random.uniform(10, 100, (city_num, 2))

@@ -9,10 +9,11 @@ class PMSP_Gurobi(object):
     # setting the solver attributes;
     self.schedules = {}
     self.order = []
-
+    self.bigM = 0
   def solve(self, job_ids, request_times, process_intervals, machine_properties):
     solved = False
-    pmsp_model = self._create_model(job_ids, request_times, process_intervals, machine_properties)
+    pmsp_model, BigM = self._create_model(job_ids, request_times, process_intervals, machine_properties)
+    self.bigM = BigM
     # self._set_model_parms(pmsp_model)
     # solve the model
     try:
@@ -50,9 +51,10 @@ class PMSP_Gurobi(object):
       self.schedules[j_id]['start'] = model._completeTime[j_id].x - process_intervals[j_id]
       self.schedules[j_id]['finish'] = model._completeTime[j_id].x
       complete.append(model._completeTime[j_id].x)
-      # for m in range(len(machines)):
-      #   if assign[j_id, m].x == 1:
-      #     self.schedules[j_id]['machine'] = m
+      for m in range(len(machines)):
+        for t in range(int(self.bigM)):
+          if model._CHI[m, j_id, t].x == 1:
+            self.schedules[j_id]['machine'] = m
       start_times[i] = model._completeTime[j_id].x - process_intervals[j_id]
     
     self.order = job_ids[np.argsort(start_times)]
@@ -82,6 +84,7 @@ class PMSP_Gurobi(object):
 
     ## create model
     m = Model('PMSP')
+    
     # job machine time
     m._MachineJobTime = [(k,j,t) for k in machines for j in jobs for t in TIME]
     
@@ -147,19 +150,19 @@ class PMSP_Gurobi(object):
     # 6. for minimax
     m.addConstrs((m._max_complete>=m._completeTime[j] for j in jobs),'minimax')
 
-    return m
+    return m, BigM
 
 
 if __name__ == '__main__':
   
   job_num = 20
-  machine_num = 3
+  machine_num = 5
   job_ids = np.arange(0, job_num, 1, dtype=np.int32)
   np.random.seed(15) # 13 is not feasible solution
-  request_times = np.random.randint(0, 20, size=(job_num), dtype=np.int32)
+  request_times = np.random.randint(0, 60, size=(job_num), dtype=np.int32)
   process_intervals = np.random.randint(10, 20, size=(job_num), dtype=np.int32)
   # machine_properties = np.random.randint(0, 3, size=(machine_num), dtype=np.int32)
-  machine_properties = np.zeros(3)
+  machine_properties = np.zeros(machine_num)
   # machine_properties = np.random.randint(10, 30, size=(machine_num), dtype=np.int32)
   print("request_times", request_times)
   pmsp_solver = PMSP_Gurobi()
